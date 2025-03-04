@@ -4,8 +4,10 @@
 import express from 'express';
 import cors from 'cors';
 import pino from 'pino';
+import cookieParser from 'cookie-parser';
 /* import { getContacts, getContact } from './controllers/contactsController.js'; */
 import contactsRouter from './routers/contacts.js';
+import authRouter from './routers/auth.js'; // Yeni eklenen satır
 // Hata Yönetimi Middleware'ini içe aktar:
 import errorHandler from './middlewares/errorHandler.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
@@ -16,6 +18,7 @@ const setupServer = () => {
   // Middleware'ler
   app.use(cors());
   app.use(express.json());
+  app.use(cookieParser());
 
 
   // Logger
@@ -33,6 +36,7 @@ const setupServer = () => {
   */
 
   app.use('/contacts', contactsRouter);
+  app.use('/auth', authRouter);
 
 
   // Hata Yönetimi Middleware'ini uygula:

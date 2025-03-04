@@ -1,5 +1,3 @@
-// Contact modeli oluşturma: Contact modeli, MongoDB'deki contacts koleksiyonunu temsil edecek.
-
 import mongoose from 'mongoose';
 
 const contactSchema = new mongoose.Schema(
@@ -24,6 +22,11 @@ const contactSchema = new mongoose.Schema(
       enum: ['work', 'home', 'personal'],
       default: 'personal',
       required: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId, // Kullanıcı ID'si
+      ref: 'User', // User modeline referans
+      required: true, // Zorunlu alan
     },
   },
   {

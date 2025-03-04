@@ -1,17 +1,15 @@
-// Veritabanı ve iş mantığı işlemleri - controllers'a veri sağlama
-
 import Contact from '../db/models/Contact.js';
 import createError from 'http-errors';
 
-
-export const getAllContacts = async (page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc') => {
+// Tüm iletişimleri getir (kullanıcıya özel)
+export const getAllContacts = async (userId, page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc') => {
   try {
     // Sıralama düzenini belirle (1: artan, -1: azalan)
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    // Toplam öğe sayısını bul
-    const totalItems = await Contact.countDocuments();
+    // Toplam öğe sayısını bul (kullanıcıya özel)
+    const totalItems = await Contact.countDocuments({ userId });
 
     // Toplam sayfa sayısını hesapla
     const totalPages = Math.ceil(totalItems / perPage);
@@ -20,8 +18,8 @@ export const getAllContacts = async (page = 1, perPage = 10, sortBy = 'name', so
     const hasPreviousPage = page > 1;
     const hasNextPage = page < totalPages;
 
-    // Veritabanından iletişimleri getir (sayfalandırma ve sıralama uygula)
-    const contacts = await Contact.find()
+    // Veritabanından iletişimleri getir (kullanıcıya özel, sayfalandırma ve sıralama uygula)
+    const contacts = await Contact.find({ userId })
       .sort(sortOptions) // Sıralama uygula
       .skip((page - 1) * perPage) // Atlanacak öğe sayısı
       .limit(perPage); // Sayfa başına öğe sayısı
@@ -45,9 +43,11 @@ export const getAllContacts = async (page = 1, perPage = 10, sortBy = 'name', so
   }
 };
 
-export const getContactById = async (contactId) => {
+// Belirli bir iletişimi getir (kullanıcıya özel)
+export const getContactById = async (userId, contactId) => {
   try {
-    const contact = await Contact.findById(contactId); // ID'ye göre iletişimi bul
+    // İletişimi bul (kullanıcıya özel)
+    const contact = await Contact.findOne({ _id: contactId, userId });
     if (!contact) {
       return {
         status: 404,
@@ -66,7 +66,7 @@ export const getContactById = async (contactId) => {
   }
 };
 
-// Yeni bir iletişim oluştur
+// Yeni bir iletişim oluştur (kullanıcıya özel)
 export const createContact = async (contactData) => {
   try {
     // Yeni iletişimi oluştur ve veritabanına kaydet
@@ -83,12 +83,12 @@ export const createContact = async (contactData) => {
   }
 };
 
-// Mevcut bir iletişimi güncelle
-export const patchContact = async (contactId, updateData) => {
+// Mevcut bir iletişimi güncelle (kullanıcıya özel)
+export const patchContact = async (userId, contactId, updateData) => {
   try {
-    // İletişimi bul ve güncelle
-    const updatedContact = await Contact.findByIdAndUpdate(
-      contactId,
+    // İletişimi bul ve güncelle (kullanıcıya özel)
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: contactId, userId }, // Kullanıcıya özel filtre
       updateData,
       { new: true } // Güncellenmiş belgeyi döndür
     );
@@ -97,7 +97,6 @@ export const patchContact = async (contactId, updateData) => {
     if (!updatedContact) {
       throw createError(404, 'Contact not found');
     }
-
 
     return {
       status: 200,
@@ -110,12 +109,11 @@ export const patchContact = async (contactId, updateData) => {
   }
 };
 
-
-// Mevcut bir iletişimi sil
-export const deleteContact = async (contactId) => {
+// Mevcut bir iletişimi sil (kullanıcıya özel)
+export const deleteContact = async (userId, contactId) => {
   try {
-    // İletişimi bul ve sil
-    const deletedContact = await Contact.findByIdAndDelete(contactId);
+    // İletişimi bul ve sil (kullanıcıya özel)
+    const deletedContact = await Contact.findOneAndDelete({ _id: contactId, userId });
 
     // İletişim bulunamazsa 404 hatası fırlat
     if (!deletedContact) {
@@ -133,5 +131,3 @@ export const deleteContact = async (contactId) => {
     throw error;
   }
 };
-
-

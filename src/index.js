@@ -16,6 +16,3 @@ const bootstrap = async () => {
 
 bootstrap();
 
-// bootstrap fonksiyonu, uygulamanın başlangıç noktasıdır.
-// Bu fonksiyon, veritabanı bağlantısını başlatır ve sunucuyu başlatır.
-// Eğer bir hata olursa, hata konsola yazdırılır ve uygulama sonlandırılır.
