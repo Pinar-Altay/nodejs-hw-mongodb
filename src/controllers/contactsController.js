@@ -4,13 +4,21 @@ import { getAllContacts, getContactById, createContact, patchContact, deleteCont
 // Hata yakalama
 import createError from 'http-errors';
 
-// Tüm iletişimleri getir:
-// /contacts
+
 export const getContacts = async (req, res) => {
   try {
-    const result = await getAllContacts();
+    // Sorgu parametrelerini al
+    const page = parseInt(req.query.page) || 1; // Varsayılan sayfa: 1
+    const perPage = parseInt(req.query.perPage) || 10; // Varsayılan öğe sayısı: 10
+    const sortBy = req.query.sortBy || 'name'; // Varsayılan sıralama özelliği: name
+    const sortOrder = req.query.sortOrder || 'asc'; // Varsayılan sıralama düzeni: asc
+
+    // Servis fonksiyonunu çağır
+    const result = await getAllContacts(page, perPage, sortBy, sortOrder);
+
+    // Başarılı yanıtı dön
     res.status(result.status).json(result);
-  } catch {
+  } catch  {
     res.status(500).json({
       status: 500,
       message: 'Internal Server Error',
@@ -19,27 +27,8 @@ export const getContacts = async (req, res) => {
   }
 };
 
-/*
-// Belirli bir iletişimi getir:
-// /contacts/:contactId
-// aşağıda hata yakalama işlemi yapılmamıştır
-export const getContact = async (req, res) => {
-  try {
-    const { contactId } = req.params;
-    const result = await getContactById(contactId);
-    res.status(result.status).json(result);
-  } catch {
-    res.status(500).json({
-      status: 500,
-      message: 'Internal Server Error',
-      data: null,
-    });
-  }
-};
-*/
 
 // Hata yakalama ile belirli bir iletişimi getir:
-// Adım 2-5::
 export const getContact = async (req, res, next) => {
   try {
     const { contactId } = req.params;
@@ -58,7 +47,6 @@ export const getContact = async (req, res, next) => {
 
 
 // Yeni bir iletişim oluştur
-// Adım 3-2
 export const createContactController = async (req, res, next) => {
   try {
     const { name, phoneNumber, email, isFavourite, contactType } = req.body;
@@ -89,7 +77,6 @@ export const createContactController = async (req, res, next) => {
 
 
 // Mevcut bir iletişimi güncelle
-// Adım 4-2
 export const patchContactController = async (req, res, next) => {
   try {
     const { contactId } = req.params;
@@ -107,7 +94,6 @@ export const patchContactController = async (req, res, next) => {
 
 
 // Mevcut bir iletişimi sil
-// Adım 5-2
 export const deleteContactController = async (req, res, next) => {
   try {
     const { contactId } = req.params;
