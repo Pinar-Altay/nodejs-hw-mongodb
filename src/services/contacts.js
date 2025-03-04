@@ -3,13 +3,41 @@
 import Contact from '../db/models/Contact.js';
 import createError from 'http-errors';
 
-export const getAllContacts = async () => {
+
+export const getAllContacts = async (page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc') => {
   try {
-    const contacts = await Contact.find(); // Tüm iletişimleri getir
+    // Sıralama düzenini belirle (1: artan, -1: azalan)
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Toplam öğe sayısını bul
+    const totalItems = await Contact.countDocuments();
+
+    // Toplam sayfa sayısını hesapla
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    // Önceki ve sonraki sayfa kontrolü
+    const hasPreviousPage = page > 1;
+    const hasNextPage = page < totalPages;
+
+    // Veritabanından iletişimleri getir (sayfalandırma ve sıralama uygula)
+    const contacts = await Contact.find()
+      .sort(sortOptions) // Sıralama uygula
+      .skip((page - 1) * perPage) // Atlanacak öğe sayısı
+      .limit(perPage); // Sayfa başına öğe sayısı
+
     return {
       status: 200,
       message: 'Successfully found contacts!',
-      data: contacts,
+      data: {
+        data: contacts, // Mevcut sayfadaki iletişimler
+        page, // Mevcut sayfa numarası
+        perPage, // Sayfadaki öğe sayısı
+        totalItems, // Toplam öğe sayısı
+        totalPages, // Toplam sayfa sayısı
+        hasPreviousPage, // Önceki sayfa var mı?
+        hasNextPage, // Sonraki sayfa var mı?
+      },
     };
   } catch (error) {
     console.error('Error while fetching contacts:', error);
@@ -39,7 +67,6 @@ export const getContactById = async (contactId) => {
 };
 
 // Yeni bir iletişim oluştur
-// Adım 3-3
 export const createContact = async (contactData) => {
   try {
     // Yeni iletişimi oluştur ve veritabanına kaydet
@@ -57,7 +84,6 @@ export const createContact = async (contactData) => {
 };
 
 // Mevcut bir iletişimi güncelle
-// Adım 4-3
 export const patchContact = async (contactId, updateData) => {
   try {
     // İletişimi bul ve güncelle
@@ -68,12 +94,11 @@ export const patchContact = async (contactId, updateData) => {
     );
 
     // İletişim bulunamazsa 404 hatası fırlat
-    // Adım 4-5
     if (!updatedContact) {
       throw createError(404, 'Contact not found');
     }
 
-    // Adım 4-4
+
     return {
       status: 200,
       message: 'Successfully patched a contact!',
@@ -87,7 +112,6 @@ export const patchContact = async (contactId, updateData) => {
 
 
 // Mevcut bir iletişimi sil
-// Adım 5-3
 export const deleteContact = async (contactId) => {
   try {
     // İletişimi bul ve sil

@@ -1,4 +1,4 @@
-// Server'dan rotaları taşıdım
+
 
 import express from 'express';
 import {
@@ -9,25 +9,29 @@ import {
   deleteContactController,
 } from '../controllers/contactsController.js';
 import ctrlWrapper from '../utils/ctrlWrapper.js';
+import validateBody from '../middlewares/validateBody.js';
+import { createContactSchema, updateContactSchema } from '../schemas/contactsSchemas.js';
+import isValidId from '../middlewares/isValidId.js';
 
 const router = express.Router();
 
-/*
-// Rotalar - 1
-router.get('/', getContacts); // Tüm iletişimleri getir
-router.get('/:contactId', getContact); // Belirli bir iletişimi getir
-*/
 
-// Rotalar - 2
-// Hata sarıcı ekledik - Adım 2-4
-router.get('/', ctrlWrapper(getContacts)); // Tüm iletişimleri getir
-router.get('/:contactId', ctrlWrapper(getContact)); // Belirli bir iletişimi getir
-// Post rotası ekledik - Adım 3-1
-router.post('/', ctrlWrapper(createContactController)); // Yeni bir iletişim oluştur
-// Patch rotası ekledik - Adım 4-1
-router.patch('/:contactId', ctrlWrapper(patchContactController)); // Mevcut bir iletişimi güncelle
-// Delete rotası ekledik - Adım 5-1
-router.delete('/:contactId', ctrlWrapper(deleteContactController)); // Mevcut bir iletişimi sil
+// Rotalar
+
+router.get('/', ctrlWrapper(getContacts));
+router.get('/:contactId', isValidId, ctrlWrapper(getContact));
+router.get('/:contactId', ctrlWrapper(getContact));
+
+router.post('/', ctrlWrapper(createContactController));
+router.post('/', validateBody(createContactSchema), ctrlWrapper(createContactController));
+
+router.patch('/:contactId', ctrlWrapper(patchContactController));
+router.patch('/:contactId', validateBody(updateContactSchema), ctrlWrapper(patchContactController));
+router.patch('/:contactId', isValidId, validateBody(updateContactSchema), ctrlWrapper(patchContactController));
+
+router.delete('/:contactId', ctrlWrapper(deleteContactController));
+router.delete('/:contactId', isValidId, ctrlWrapper(deleteContactController));
+
 
 export default router;
 
