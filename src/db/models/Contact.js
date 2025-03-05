@@ -4,11 +4,11 @@ const contactSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, 'Name is required'],
     },
     phoneNumber: {
       type: String,
-      required: true,
+      required: [true, 'Phone number is required'],
     },
     email: {
       type: String,
@@ -20,17 +20,19 @@ const contactSchema = new mongoose.Schema(
     contactType: {
       type: String,
       enum: ['work', 'home', 'personal'],
-      default: 'personal',
-      required: true,
+      required: [true, 'Contact type is required'],
+    },
+    photo: {
+      type: String, // Cloudinary'den gelen fotoğraf URL'si
     },
     userId: {
-      type: mongoose.Schema.Types.ObjectId, // Kullanıcı ID'si
-      ref: 'User', // User modeline referans
-      required: true, // Zorunlu alan
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
   },
   {
-    timestamps: true, // createdAt ve updatedAt alanlarını otomatik ekler
+    timestamps: true,
   }
 );
 

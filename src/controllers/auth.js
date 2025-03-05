@@ -84,9 +84,65 @@ const logout = async (req, res, next) => {
   }
 };
 
+const sendResetEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // Kullanıcıyı bul
+    const user = await authService.findUserByEmail(email);
+    if (!user) {
+      throw createHttpError(404, 'User not found!');
+    }
+
+    // Şifre sıfırlama e-postası gönder
+    await authService.sendResetPasswordEmail(email);
+
+    res.status(200).json({
+      status: 200,
+      message: 'Reset password email has been successfully sent.',
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    // Token'ı doğrula ve e-posta adresini al
+    const { email } = await authService.verifyResetToken(token);
+
+    // Kullanıcıyı bul
+    const user = await authService.findUserByEmail(email);
+    if (!user) {
+      throw createHttpError(404, 'User not found!');
+    }
+
+    // Şifreyi güncelle
+    await authService.updatePassword(email, password);
+
+    // Kullanıcının oturumlarını sil
+    await authService.clearUserSessions(user._id);
+
+    res.status(200).json({
+      status: 200,
+      message: 'Password has been successfully reset.',
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export default {
   register,
   login,
   refresh,
   logout,
+  sendResetEmail,
+  resetPassword,
 };
