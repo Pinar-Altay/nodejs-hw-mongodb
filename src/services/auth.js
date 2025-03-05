@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import User from '../db/models/User.js';
 import Session from '../db/models/Session.js';
 
@@ -90,11 +91,67 @@ const refreshSession = async (refreshToken) => {
 };
 
 const logout = async (refreshToken) => {
-  // Refresh token'ı kullanarak oturumu bul ve sil
   const session = await Session.findOneAndDelete({ refreshToken });
   if (!session) {
     throw createHttpError(404, 'Session not found');
   }
+};
+
+// Yeni fonksiyon: Kullanıcıyı e-posta adresine göre bul
+const findUserByEmail = async (email) => {
+  const user = await User.findOne({ email });
+  return user;
+};
+
+// Yeni fonksiyon: Şifre sıfırlama e-postası gönder
+const sendResetPasswordEmail = async (email) => {
+  try {
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '5m' });
+    const resetLink = `${process.env.APP_DOMAIN}/reset-password?token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject: 'Şifre Sıfırlama İsteği',
+      text: `Şifrenizi sıfırlamak için bu bağlantıyı kullanın: ${resetLink}`,
+      html: `<p>Şifrenizi sıfırlamak için <a href="${resetLink}">buraya tıklayın</a>.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch {
+    throw createHttpError(500, 'Failed to send the email, please try again later.');
+  }
+};
+
+// Yeni fonksiyon: Token'ı doğrula ve e-posta adresini al
+const verifyResetToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch {
+    throw createHttpError(401, 'Token is expired or invalid.');
+  }
+};
+
+// Yeni fonksiyon: Şifreyi güncelle
+const updatePassword = async (email, newPassword) => {
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await User.findOneAndUpdate({ email }, { password: hashedPassword });
+};
+
+// Yeni fonksiyon: Kullanıcının oturumlarını sil
+const clearUserSessions = async (userId) => {
+  await Session.deleteMany({ userId });
 };
 
 export default {
@@ -102,4 +159,9 @@ export default {
   login,
   refreshSession,
   logout,
+  findUserByEmail,
+  sendResetPasswordEmail,
+  verifyResetToken, // Yeni fonksiyon
+  updatePassword, // Yeni fonksiyon
+  clearUserSessions, // Yeni fonksiyon
 };
